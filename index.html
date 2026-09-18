@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+        <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+                <meta name="description" content="Eaglercraft 1.20.4 with mobile touch controls (ported from 1.8.8)" />
+                <meta name="keywords" content="eaglercraft, eaglercraftx, minecraft, 1.20, mobile, touch" />
+                <title>EaglercraftX 1.20.4 (Mobile)</title>
+                <meta property="og:locale" content="en-US" />
+                <meta property="og:type" content="website" />
+                <meta property="og:title" content="Eaglercraft 1.20.4 Mobile" />
+                <meta property="og:description" content="Eaglercraft 1.20.4 with mobile touch controls ported from 1.8.8" />
+                <link type="image/png" rel="shortcut icon" href="favicon.png" />
+                <link rel="stylesheet" href="mobile.css" />
+                <script type="text/javascript" src="classes.js"></script>
+                <script type="text/javascript" src="mobile.js"></script>
+                <script type="text/javascript">
+                        "use strict";
+                        window.addEventListener("load", () => {
+                                if(document.location.href.startsWith("file:")) {
+                                        alert("HTTP please, do not open this file locally, run a local HTTP server and load it via HTTP");
+                                }else {
+                                        const relayId = Math.floor(Math.random() * 3);
+                                        window.eaglercraftXOpts = {
+                                                demoMode: false,
+                                                container: "game_frame",
+                                                assetsURI: "assets.epk",
+                                                localesURI: "lang/",
+                                                worldsDB: "worlds",
+                                                logInvalidCerts: true,
+                                                servers: [
+                                                        { addr: "ws" + window.location.href.slice(4), name: "EaglercraftX  1.19 Server" }
+                                                ],
+                                                relays: [
+                                                        { addr: "wss://relay.deev.is/", comment: "lax1dude relay #1", primary: relayId == 0 },
+                                                        { addr: "wss://relay.lax1dude.net/", comment: "lax1dude relay #2", primary: relayId == 1 },
+                                                        { addr: "wss://relay.shhnowisnottheti.me/", comment: "ayunami relay #1", primary: relayId == 2 }
+                                                ]
+                                        };
+                                        
+                                        var q = window.location.search;
+                                        if(typeof q === "string" && q.startsWith("?")) {
+                                                q = new URLSearchParams(q);
+                                                var s = q.get("server");
+                                                if(s) window.eaglercraftXOpts.joinServer = s;
+                                                var mobile = q.get("mobile");
+                                                if(mobile === "1" || mobile === "true") {
+                                                        // Force mobile mode on
+                                                        window.addEventListener("load", function again() {
+                                                                if(window.eaglerMobile) window.eaglerMobile.activate();
+                                                                else setTimeout(again, 200);
+                                                        });
+                                                } else if(mobile === "0" || mobile === "false") {
+                                                        // Force mobile mode off
+                                                        window.__eaglerMobileForceOff = true;
+                                                }
+                                        }
+                                        
+                                        main();
+                                }
+                        });
+                </script>
+        </head>
+        <body style="margin:0px;width:100vw;height:100vh;overflow:hidden;background-color:black;" id="game_frame">
+                <!-- Mobile touch controls are injected by mobile.js -->
+        </body>
+</html>
