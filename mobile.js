@@ -701,12 +701,30 @@
         buildUI();
 
         if (EM.autoDetected) {
+            // Activate immediately on touch devices — don't wait for canvas
+            // (the canvas can take many seconds to appear on slow connections)
+            setActive(true);
+            showStatus("Mobile controls active");
+
+            // Also try to capture the canvas once it appears
             var tries = 0;
             var iv = setInterval(function () {
-                EM.capturedCanvas = EM.capturedCanvas || findGameCanvas();
-                if (EM.capturedCanvas || tries > 30) {
+                if (!EM.capturedCanvas) {
+                    EM.capturedCanvas = findGameCanvas();
+                    if (EM.capturedCanvas) {
+                        // Re-bind targets now that we have the canvas
+                        EM.mouseMoveTarget = EM.capturedCanvas;
+                        EM.mouseButtonTarget = EM.capturedCanvas;
+                        if (!EM.keyTarget) EM.keyTarget = EM.capturedCanvas;
+                        console.log("[Eaglercraft Mobile] Captured game canvas:", EM.capturedCanvas);
+                    }
+                }
+                if (EM.capturedCanvas || tries > 60) {
+                    // 60 tries × 500ms = 30 seconds max wait
                     clearInterval(iv);
-                    setActive(true);
+                    if (!EM.capturedCanvas && tries > 60) {
+                        console.warn("[Eaglercraft Mobile] Game canvas not found after 30s. Toggle button still works.");
+                    }
                 }
                 tries++;
             }, 500);
@@ -715,16 +733,24 @@
         }
     }
 
-    if (document.readyState === "complete" || document.readyState === "interactive") {
-        setTimeout(boot, 100);
+    // Run boot as soon as DOM is ready (don't wait for full page load)
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", boot);
     } else {
-        window.addEventListener("DOMContentLoaded", boot);
-        window.addEventListener("load", function () {
-            if (!EM.capturedCanvas) {
-                EM.capturedCanvas = findGameCanvas();
-            }
-        });
+        // DOM already parsed (interactive or complete)
+        setTimeout(boot, 0);
     }
+    // Also try to find canvas after window fully loads
+    window.addEventListener("load", function () {
+        if (!EM.capturedCanvas) {
+            EM.capturedCanvas = findGameCanvas();
+            if (EM.capturedCanvas && EM.active) {
+                EM.mouseMoveTarget = EM.capturedCanvas;
+                EM.mouseButtonTarget = EM.capturedCanvas;
+                if (!EM.keyTarget) EM.keyTarget = EM.capturedCanvas;
+            }
+        }
+    });
 
     window.eaglerMobile = {
         activate: function () { setActive(true); },

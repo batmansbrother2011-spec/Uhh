@@ -15,13 +15,25 @@
                 <meta property="og:description" content="Eaglercraft 1.20.4 with mobile touch controls ported from 1.8.8" />
                 <link type="image/png" rel="shortcut icon" href="favicon.png" />
                 <link rel="stylesheet" href="mobile.css" />
-                <script type="text/javascript" src="classes.js"></script>
+                <!-- Load mobile.js FIRST so the toggle button appears immediately,
+                     even while classes.js (13MB) is still downloading -->
                 <script type="text/javascript" src="mobile.js"></script>
+                <!-- Then load the game's main script -->
+                <script type="text/javascript" src="classes.js"></script>
                 <script type="text/javascript">
                         "use strict";
                         window.addEventListener("load", () => {
                                 if(document.location.href.startsWith("file:")) {
-                                        alert("HTTP please, do not open this file locally, run a local HTTP server and load it via HTTP");
+                                        // Show a non-blocking warning instead of alert()
+                                        console.warn("[Eaglercraft Mobile] This page is opened via file:// protocol.");
+                                        console.warn("[Eaglercraft Mobile] The game requires HTTP. Please run a local HTTP server:");
+                                        console.warn("[Eaglercraft Mobile]   cd web && python3 -m http.server 8000");
+                                        console.warn("[Eaglercraft Mobile]   Then open http://localhost:8000/");
+                                        // Show visible message in the page
+                                        var warn = document.createElement("div");
+                                        warn.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;color:#000;padding:20px;border-radius:8px;font-family:sans-serif;font-size:14px;max-width:90vw;text-align:center;z-index:1000;box-shadow:0 4px 20px rgba(0,0,0,0.5);";
+                                        warn.innerHTML = "<b>HTTP required</b><br><br>This page must be opened via HTTP, not as a local file.<br><br>To run a local server:<br><code style=\"background:#eee;padding:4px 8px;border-radius:4px;display:block;margin-top:8px;\">cd web<br>python3 -m http.server 8000</code><br><br>Then open <code style=\"background:#eee;padding:4px 8px;border-radius:4px;\">http://localhost:8000/</code>";
+                                        document.body.appendChild(warn);
                                 }else {
                                         const relayId = Math.floor(Math.random() * 3);
                                         window.eaglercraftXOpts = {
@@ -49,10 +61,11 @@
                                                 var mobile = q.get("mobile");
                                                 if(mobile === "1" || mobile === "true") {
                                                         // Force mobile mode on
-                                                        window.addEventListener("load", function again() {
+                                                        function tryActivate() {
                                                                 if(window.eaglerMobile) window.eaglerMobile.activate();
-                                                                else setTimeout(again, 200);
-                                                        });
+                                                                else setTimeout(tryActivate, 200);
+                                                        }
+                                                        tryActivate();
                                                 } else if(mobile === "0" || mobile === "false") {
                                                         // Force mobile mode off
                                                         window.__eaglerMobileForceOff = true;
@@ -65,6 +78,24 @@
                 </script>
         </head>
         <body style="margin:0px;width:100vw;height:100vh;overflow:hidden;background-color:black;" id="game_frame">
+                <!-- Loading indicator shown immediately, removed once game starts -->
+                <div id="em-loading" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;text-align:center;z-index:40;pointer-events:none;">
+                        <div style="margin-bottom:12px;font-weight:600;">Loading Eaglercraft 1.20.4...</div>
+                        <div style="font-size:11px;opacity:0.6;">mobile controls will appear shortly</div>
+                </div>
+                <script>
+                        // Hide loading indicator once the game canvas appears
+                        var hideLoadingOnCanvas = function() {
+                                var canvases = document.querySelectorAll('canvas');
+                                if(canvases.length > 0 && canvases[0].width > 100) {
+                                        var loading = document.getElementById('em-loading');
+                                        if(loading) loading.style.display = 'none';
+                                        return;
+                                }
+                                setTimeout(hideLoadingOnCanvas, 500);
+                        };
+                        setTimeout(hideLoadingOnCanvas, 1000);
+                </script>
                 <!-- Mobile touch controls are injected by mobile.js -->
         </body>
 </html>
