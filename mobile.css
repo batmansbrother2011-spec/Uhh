@@ -1,12 +1,9 @@
 /* =====================================================================
- * Eaglercraft 1.20.4 - Mobile Touch Controls (v2)
- * Faithfully styled to match Eaglercraft 1.8.8 mobile UI
- * - Minecraft stone-textured buttons with beveled edges
- * - Pixelated icons (CSS-drawn for crispness)
- * - Layout: Pause/Chat/F5/F3 top, D-pad bottom-left, Jump/Inv bottom-right
+ * Eaglercraft 1.20.4 - Mobile Touch Controls (v3)
+ * Uses ACTUAL Eaglercraft 1.8.8 touch_gui.png texture as sprite sheet
+ * Sprite coordinates ported directly from 1.8.8's EnumTouchControl class
  * ===================================================================== */
 
-/* Root container */
 #eagler-mobile-root {
     position: fixed;
     inset: 0;
@@ -17,24 +14,33 @@
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     touch-action: none;
-    font-family: "Press Start 2P", "VT323", monospace, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     display: none;
 }
-#eagler-mobile-root.em-active {
-    display: block;
-}
-
-/* Re-enable pointer events on interactive children */
-#eagler-mobile-root .em-interactive {
-    pointer-events: auto;
-}
+#eagler-mobile-root.em-active { display: block; }
+#eagler-mobile-root .em-interactive { pointer-events: auto; }
 
 /* =====================================================================
- * Minecraft-style button base
- * Stone-textured gray with beveled edges
+ * Sprite sheet reference
+ * touch_gui.png is 256x256, contains button sprites at these coords:
+ *   (U,V) size -> button
+ *   (0,0)   18x18 -> Pause icon (two vertical bars)
+ *   (0,18)  18x18 -> Chat icon (speech bubble)
+ *   (36,18) 18x18 -> Inventory icon (3x3 grid)
+ *   (20,36) 20x20 -> Jump icon (diamond)
+ *   (220,218) 18x18 -> "F3" text
+ *   (0,56)  22x22 -> D-pad LEFT button (full texture)
+ *   (22,56) 22x22 -> D-pad LEFT pressed
+ *   (44,56) 22x22 -> D-pad UP button
+ *   (66,56) 22x22 -> D-pad RIGHT button
+ * All sprites are 1:1 ports from Eaglercraft 1.8.8's touch_gui.png
+ * ===================================================================== */
+
+/* =====================================================================
+ * Minecraft-style button base (stone texture)
  * ===================================================================== */
 .em-mc-btn {
     position: absolute;
@@ -51,8 +57,6 @@
         inset 2px 2px 0 rgba(255, 255, 255, 0.25),
         inset -2px -2px 0 rgba(0, 0, 0, 0.35);
     color: #1a1a1a;
-    font-family: "Press Start 2P", "VT323", monospace;
-    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
     cursor: pointer;
     transition: filter 0.05s ease;
     image-rendering: pixelated;
@@ -81,16 +85,158 @@
     filter: brightness(0.85);
 }
 
-/* Pixelated icon container - drawn with box-shadow tricks */
-.em-icon {
-    position: relative;
-    width: 24px;
-    height: 24px;
+/* =====================================================================
+ * Sprite-based icon backgrounds
+ * Uses touch_gui.png as a CSS sprite sheet
+ * ===================================================================== */
+.em-sprite {
+    background-image: url("mobile_assets/touch_gui.png");
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    -webkit-image-rendering: pixelated;
+    pointer-events: none;
+}
+
+/* Pause icon - sprite at (0,0) 18x18 - two vertical bars */
+.em-sprite-pause {
+    width: 18px;
+    height: 18px;
+    background-position: -0px -0px;
+    transform: scale(1.5);
+}
+
+/* Chat icon - sprite at (0,18) 18x18 - speech bubble */
+.em-sprite-chat {
+    width: 18px;
+    height: 18px;
+    background-position: -0px -18px;
+    transform: scale(1.5);
+}
+
+/* Inventory icon - sprite at (36,18) 18x18 - 3x3 grid */
+.em-sprite-inventory {
+    width: 18px;
+    height: 18px;
+    background-position: -36px -18px;
+    transform: scale(1.5);
+}
+
+/* Jump icon - sprite at (20,36) 20x20 - diamond */
+.em-sprite-jump {
+    width: 20px;
+    height: 20px;
+    background-position: -20px -36px;
+    transform: scale(1.4);
+}
+
+/* F3 text - sprite at (220,218) 18x18 */
+.em-sprite-f3 {
+    width: 18px;
+    height: 18px;
+    background-position: -220px -218px;
+    transform: scale(1.3);
+}
+
+/* F5 text - rendered as actual text (sprite is empty in 1.8.8 texture) */
+.em-text-f5 {
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
+    letter-spacing: -0.5px;
+    pointer-events: none;
+}
+
+/* F3 text - also rendered as actual text for consistency */
+.em-text-f3 {
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.4);
+    letter-spacing: -0.5px;
     pointer-events: none;
 }
 
 /* =====================================================================
- * Toggle button (top-right corner) - small Minecraft-style button
+ * D-pad buttons - use 22x22 sprites as the FULL button background
+ * The sprites include both button bg + arrow icon
+ * ===================================================================== */
+.em-dpad-sprite {
+    background-image: url("mobile_assets/touch_gui.png");
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    -webkit-image-rendering: pixelated;
+    background-color: #8b8b8b;
+    border: 2px solid;
+    border-color: #f0f0f0 #373737 #373737 #f0f0f0;
+    box-shadow:
+        inset 2px 2px 0 rgba(255, 255, 255, 0.25),
+        inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    transition: filter 0.05s ease;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    /* Scale up the 22x22 sprite to fill the button */
+    background-size: 100% 100%;
+}
+
+.em-dpad-sprite.em-pressed {
+    filter: brightness(0.7);
+    border-color: #373737 #f0f0f0 #f0f0f0 #373737;
+}
+
+/* D-pad Up - sprite at (44,56) 22x22 */
+.em-dpad-up {
+    background-position: -44px -56px;
+    background-size: 22px 22px;
+    width: 50px; height: 50px;
+}
+
+/* D-pad Down - sprite at (0,56) 22x22 (K2S uses BOp class, but Dpt sprite is closest match) */
+.em-dpad-down {
+    background-position: -0px -56px;
+    background-size: 22px 22px;
+    width: 50px; height: 50px;
+    /* Flip vertically for "down" appearance */
+    transform: scaleY(-1);
+}
+
+/* D-pad Left - sprite at (0,56) 22x22 */
+.em-dpad-left {
+    background-position: -0px -56px;
+    background-size: 22px 22px;
+    width: 50px; height: 50px;
+}
+
+/* D-pad Right - sprite at (66,56) 22x22 */
+.em-dpad-right {
+    background-position: -66px -56px;
+    background-size: 22px 22px;
+    width: 50px; height: 50px;
+    /* Flip horizontally for "right" appearance */
+    transform: scaleX(-1);
+}
+
+/* D-pad center - sneak/jump diamond */
+.em-dpad-center-icon {
+    width: 18px;
+    height: 18px;
+    background-image: url("mobile_assets/touch_gui.png");
+    background-position: -36px -18px;  /* inventory grid as center icon */
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    -webkit-image-rendering: pixelated;
+    background-size: 18px 18px;
+    pointer-events: none;
+    transform: scale(1.4);
+}
+
+/* =====================================================================
+ * Toggle button (top-right corner)
  * ===================================================================== */
 #em-toggle-btn {
     position: fixed;
@@ -112,15 +258,8 @@
     justify-content: center;
     padding: 0;
 }
-#em-toggle-btn:active {
-    filter: brightness(0.85);
-}
-/* Hamburger icon - 3 horizontal lines */
-#em-toggle-btn .em-hamburger {
-    width: 22px;
-    height: 18px;
-    position: relative;
-}
+#em-toggle-btn:active { filter: brightness(0.85); }
+#em-toggle-btn .em-hamburger { width: 22px; height: 18px; position: relative; }
 #em-toggle-btn .em-hamburger::before,
 #em-toggle-btn .em-hamburger::after,
 #em-toggle-btn .em-hamburger > span {
@@ -137,7 +276,7 @@
 #em-toggle-btn .em-hamburger > span { top: 7px; }
 
 /* =====================================================================
- * TOP BAR - Pause | Chat | F5 | F3 (4 stone buttons in a row)
+ * TOP BAR - Pause | Chat | F5 | F3
  * ===================================================================== */
 .em-topbar {
     position: fixed;
@@ -153,73 +292,13 @@
     position: relative;
     width: 44px;
     height: 44px;
-    font-size: 9px;
-    font-weight: bold;
-}
-
-/* Pause icon - two vertical bars */
-.em-icon-pause {
-    width: 14px;
-    height: 18px;
-    position: relative;
-}
-.em-icon-pause::before,
-.em-icon-pause::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    width: 4px;
-    height: 18px;
-    background: #1a1a1a;
-    box-shadow: 1px 0 0 rgba(255,255,255,0.4);
-}
-.em-icon-pause::before { left: 0; }
-.em-icon-pause::after { right: 0; }
-
-/* Chat icon - speech bubble with lines */
-.em-icon-chat {
-    width: 22px;
-    height: 20px;
-    position: relative;
-}
-.em-icon-chat::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: #1a1a1a;
-    border-radius: 0;
-    clip-path: polygon(
-        0 0, 22px 0, 22px 14px, 14px 14px, 10px 20px, 10px 14px, 0 14px
-    );
-}
-.em-icon-chat::after {
-    content: "";
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 14px;
-    height: 2px;
-    background: #8b8b8b;
-    box-shadow:
-        0 4px 0 #8b8b8b,
-        0 8px 0 #8b8b8b;
-}
-
-/* F-key text - just text */
-.em-f-key {
-    font-family: "Press Start 2P", "VT323", monospace;
-    font-size: 10px;
-    font-weight: bold;
-    color: #1a1a1a;
-    text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
-    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* =====================================================================
- * D-PAD (bottom-left) - cross of 5 stone buttons
- * Layout:    [UP]
- *         [L] [C] [R]
- *            [DN]
+ * D-PAD container (bottom-left)
  * ===================================================================== */
 .em-dpad {
     position: fixed;
@@ -229,50 +308,35 @@
     height: 156px;
     pointer-events: auto;
 }
-.em-dpad .em-mc-btn {
+.em-dpad .em-dpad-sprite {
+    position: absolute;
     width: 50px;
     height: 50px;
-    position: absolute;
 }
 .em-dpad-up    { left: 53px; top: 0; }
 .em-dpad-down  { left: 53px; top: 106px; }
 .em-dpad-left  { left: 0;   top: 53px; }
 .em-dpad-right { left: 106px; top: 53px; }
-.em-dpad-center { left: 53px; top: 53px; }
-
-/* Arrow icons - drawn with CSS */
-.em-arrow {
-    width: 0;
-    height: 0;
-    border-style: solid;
-    pointer-events: none;
-    filter: drop-shadow(1px 1px 0 rgba(255,255,255,0.4));
+.em-dpad-center {
+    left: 53px; top: 53px;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: #8b8b8b;
+    background-image: linear-gradient(to bottom, #c6c6c6, #a8a8a8 30%, #8b8b8b 60%, #6e6e6e 100%);
+    border: 2px solid;
+    border-color: #f0f0f0 #373737 #373737 #f0f0f0;
+    box-shadow: inset 2px 2px 0 rgba(255,255,255,0.25), inset -2px -2px 0 rgba(0,0,0,0.35);
+    cursor: pointer;
+    transition: filter 0.05s ease;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.em-arrow-up {
-    border-width: 0 12px 18px 12px;
-    border-color: transparent transparent #1a1a1a transparent;
-}
-.em-arrow-down {
-    border-width: 18px 12px 0 12px;
-    border-color: #1a1a1a transparent transparent transparent;
-}
-.em-arrow-left {
-    border-width: 12px 18px 12px 0;
-    border-color: transparent #1a1a1a transparent transparent;
-}
-.em-arrow-right {
-    border-width: 12px 0 12px 18px;
-    border-color: transparent transparent transparent #1a1a1a;
-}
-
-/* Center diamond - sneak/jump indicator */
-.em-diamond {
-    width: 18px;
-    height: 18px;
-    background: #1a1a1a;
-    transform: rotate(45deg);
-    pointer-events: none;
-    box-shadow: 1px 1px 0 rgba(255,255,255,0.4) inset, -1px -1px 0 rgba(0,0,0,0.4) inset;
+.em-dpad-center.em-pressed {
+    filter: brightness(0.7);
+    border-color: #373737 #f0f0f0 #f0f0f0 #373737;
 }
 
 /* =====================================================================
@@ -297,179 +361,61 @@
     width: 60px;
     height: 60px;
     pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Jump icon - diamond shape (rotated square) */
-.em-icon-jump {
-    width: 22px;
-    height: 22px;
-    background: #1a1a1a;
-    transform: rotate(45deg);
-    pointer-events: none;
-    box-shadow:
-        1px 1px 0 rgba(255,255,255,0.4) inset,
-        -1px -1px 0 rgba(0,0,0,0.4) inset;
-}
-
-/* Inventory icon - 3x3 grid */
-.em-icon-inventory {
-    width: 26px;
-    height: 26px;
-    position: relative;
-    pointer-events: none;
-}
-.em-icon-inventory::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        linear-gradient(to right,
-            #1a1a1a 0, #1a1a1a 7px, transparent 7px, transparent 9px,
-            #1a1a1a 9px, #1a1a1a 17px, transparent 17px, transparent 19px,
-            #1a1a1a 19px, #1a1a1a 26px),
-        linear-gradient(to bottom,
-            #1a1a1a 0, #1a1a1a 7px, transparent 7px, transparent 9px,
-            #1a1a1a 9px, #1a1a1a 17px, transparent 17px, transparent 19px,
-            #1a1a1a 19px, #1a1a1a 26px);
-    background-size: 26px 26px, 26px 26px;
-    background-repeat: no-repeat;
-}
-.em-icon-inventory::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        repeating-linear-gradient(to right,
-            transparent 0, transparent 7px,
-            #8b8b8b 7px, #8b8b8b 9px,
-            transparent 9px, transparent 17px,
-            #8b8b8b 17px, #8b8b8b 19px,
-            transparent 19px, transparent 26px),
-        repeating-linear-gradient(to bottom,
-            transparent 0, transparent 7px,
-            #8b8b8b 7px, #8b8b8b 9px,
-            transparent 9px, transparent 17px,
-            #8b8b8b 17px, #8b8b8b 19px,
-            transparent 19px, transparent 26px);
-    mix-blend-mode: lighten;
-}
-
-/* Break/Place buttons - optional, smaller secondary actions */
+/* Secondary actions */
 .em-secondary-actions {
     display: flex;
     gap: 6px;
     margin-top: 4px;
+    pointer-events: none;
 }
 .em-secondary-actions .em-mc-btn {
     width: 44px;
     height: 44px;
-    font-size: 8px;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Break icon - sword-like diagonal slash */
-.em-icon-break {
-    width: 24px;
-    height: 24px;
-    position: relative;
-    transform: rotate(-45deg);
-}
-.em-icon-break::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    width: 24px;
-    height: 4px;
-    background: #1a1a1a;
-    transform: translateY(-50%);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.4);
-}
-.em-icon-break::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 8px;
-    height: 8px;
-    background: #5a5a5a;
-    border: 2px solid #1a1a1a;
-}
-
-/* Place icon - block/hand */
-.em-icon-place {
-    width: 22px;
-    height: 22px;
-    background: #1a1a1a;
-    position: relative;
+/* Break/Place/Drop icons - text labels since 1.8.8 uses dynamic rendering */
+.em-label-break {
+    font-family: monospace;
+    font-size: 9px;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
     pointer-events: none;
+    text-align: center;
+    line-height: 1;
 }
-.em-icon-place::before {
-    content: "";
-    position: absolute;
-    inset: 4px;
-    background: #8b8b8b;
-    border: 1px solid #1a1a1a;
+.em-label-place {
+    font-family: monospace;
+    font-size: 9px;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
+    pointer-events: none;
+    text-align: center;
+    line-height: 1;
 }
-
-/* Drop icon - small downward arrow with line */
-.em-icon-drop {
-    width: 18px;
-    height: 22px;
-    position: relative;
-}
-.em-icon-drop::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 0 8px 12px 8px;
-    border-color: transparent transparent #1a1a1a transparent;
-}
-.em-icon-drop::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 8px;
-    background: #1a1a1a;
-}
-
-/* Sneak icon - person crouching (simple) */
-.em-icon-sneak {
-    width: 22px;
-    height: 18px;
-    position: relative;
-}
-.em-icon-sneak::before {
-    /* Body */
-    content: "";
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 14px;
-    height: 8px;
-    background: #1a1a1a;
-    border-radius: 2px;
-}
-.em-icon-sneak::after {
-    /* Head */
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 2px;
-    width: 6px;
-    height: 6px;
-    background: #1a1a1a;
+.em-label-drop {
+    font-family: monospace;
+    font-size: 9px;
+    font-weight: bold;
+    color: #1a1a1a;
+    text-shadow: 1px 1px 0 rgba(255,255,255,0.4);
+    pointer-events: none;
+    text-align: center;
+    line-height: 1;
 }
 
 /* =====================================================================
- * HOTBAR (bottom-center) - 9 slots, Minecraft-style
+ * HOTBAR (bottom-center) - 9 slots, Minecraft style
  * ===================================================================== */
 .em-hotbar {
     position: fixed;
@@ -492,7 +438,7 @@
     border: 2px solid;
     border-color: #373737 #5a5a5a #5a5a5a #373737;
     color: #fff;
-    font-family: "Press Start 2P", monospace;
+    font-family: monospace;
     font-size: 12px;
     text-shadow: 1px 1px 0 #000;
     display: flex;
@@ -509,13 +455,9 @@
     border-width: 3px;
     background-image: linear-gradient(to bottom, #4a5a3a 0%, #2a3a1a 100%);
     z-index: 2;
-    box-shadow:
-        0 0 0 1px #000,
-        inset 1px 1px 0 rgba(255,255,255,0.2);
+    box-shadow: 0 0 0 1px #000, inset 1px 1px 0 rgba(255,255,255,0.2);
 }
-.em-slot:active {
-    filter: brightness(1.2);
-}
+.em-slot:active { filter: brightness(1.2); }
 
 /* =====================================================================
  * Look zone (right half of screen) - drag-to-look
@@ -545,7 +487,6 @@
     transform: translate(-50%, -50%);
     color: rgba(255, 255, 255, 0.55);
     font-size: 11px;
-    font-family: -apple-system, sans-serif;
     text-align: center;
     pointer-events: none;
     font-weight: 600;
@@ -566,7 +507,7 @@
     pointer-events: none;
     border: none;
     background: transparent;
-    font-size: 16px; /* >=16 to avoid iOS auto-zoom */
+    font-size: 16px;
 }
 
 /* =====================================================================
@@ -582,7 +523,6 @@
     padding: 6px 14px;
     border-radius: 12px;
     font-size: 12px;
-    font-family: -apple-system, sans-serif;
     font-weight: 600;
     pointer-events: none;
     transition: opacity 0.4s ease;
@@ -591,9 +531,7 @@
     z-index: 55;
     border: 1px solid rgba(255,255,255,0.2);
 }
-#em-status-pill.em-show {
-    opacity: 1;
-}
+#em-status-pill.em-show { opacity: 1; }
 
 /* =====================================================================
  * Responsive: small screens
@@ -605,7 +543,7 @@
         left: calc(env(safe-area-inset-left, 0px) + 12px);
         bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
     }
-    .em-dpad .em-mc-btn {
+    .em-dpad .em-dpad-sprite, .em-dpad-center {
         width: 42px;
         height: 42px;
     }
@@ -615,34 +553,22 @@
     .em-dpad-right { left: 90px; top: 45px; }
     .em-dpad-center { left: 45px; top: 45px; }
 
-    .em-actions .em-mc-btn {
-        width: 52px;
-        height: 52px;
-    }
+    .em-actions .em-mc-btn { width: 52px; height: 52px; }
     .em-actions {
         right: calc(env(safe-area-inset-right, 0px) + 12px);
         bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
     }
-    .em-slot {
-        width: 32px;
-        height: 32px;
-        font-size: 10px;
-    }
-    .em-topbar .em-mc-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 8px;
-    }
+    .em-slot { width: 32px; height: 32px; font-size: 10px; }
+    .em-topbar .em-mc-btn { width: 40px; height: 40px; }
 }
 
-/* Landscape phones */
 @media (orientation: landscape) and (max-height: 480px) {
     .em-dpad {
         bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
         width: 120px;
         height: 120px;
     }
-    .em-dpad .em-mc-btn {
+    .em-dpad .em-dpad-sprite, .em-dpad-center {
         width: 38px;
         height: 38px;
     }
@@ -652,24 +578,11 @@
     .em-dpad-right { left: 82px; top: 41px; }
     .em-dpad-center { left: 41px; top: 41px; }
 
-    .em-actions .em-mc-btn {
-        width: 48px;
-        height: 48px;
-    }
-    .em-actions {
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
-    }
-    .em-slot {
-        width: 32px;
-        height: 32px;
-    }
-    .em-hotbar {
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-    }
-    .em-topbar .em-mc-btn {
-        width: 36px;
-        height: 36px;
-    }
+    .em-actions .em-mc-btn { width: 48px; height: 48px; }
+    .em-actions { bottom: calc(env(safe-area-inset-bottom, 0px) + 60px); }
+    .em-slot { width: 32px; height: 32px; }
+    .em-hotbar { bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+    .em-topbar .em-mc-btn { width: 36px; height: 36px; }
     .em-lookzone {
         top: calc(env(safe-area-inset-top, 0px) + 48px);
         height: calc(100vh - 140px - env(safe-area-inset-top, 0px));

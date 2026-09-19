@@ -393,44 +393,40 @@
         var dpad = document.createElement("div");
         dpad.className = "em-dpad em-interactive";
 
-        // Up arrow (W = forward)
-        var dpadUp = mkMCBtn("dpad", "em-dpad-up");
-        dpadUp.appendChild(mkArrow("up"));
+        // Up arrow (W = forward) - uses sprite (44,56) 22x22 from touch_gui.png
+        var dpadUp = mkDpadBtn("em-dpad-up");
         attachHoldButton(dpadUp,
             function () { pressKey(EM.keys.forward); EM.moveDir.up = true; },
             function () { releaseKey(EM.keys.forward); EM.moveDir.up = false; }
         );
         dpad.appendChild(dpadUp);
 
-        // Down arrow (S = back)
-        var dpadDown = mkMCBtn("dpad", "em-dpad-down");
-        dpadDown.appendChild(mkArrow("down"));
+        // Down arrow (S = back) - uses sprite (0,56) 22x22 flipped vertically
+        var dpadDown = mkDpadBtn("em-dpad-down");
         attachHoldButton(dpadDown,
             function () { pressKey(EM.keys.back); EM.moveDir.down = true; },
             function () { releaseKey(EM.keys.back); EM.moveDir.down = false; }
         );
         dpad.appendChild(dpadDown);
 
-        // Left arrow (A = strafe left)
-        var dpadLeft = mkMCBtn("dpad", "em-dpad-left");
-        dpadLeft.appendChild(mkArrow("left"));
+        // Left arrow (A = strafe left) - uses sprite (0,56) 22x22
+        var dpadLeft = mkDpadBtn("em-dpad-left");
         attachHoldButton(dpadLeft,
             function () { pressKey(EM.keys.left); EM.moveDir.left = true; },
             function () { releaseKey(EM.keys.left); EM.moveDir.left = false; }
         );
         dpad.appendChild(dpadLeft);
 
-        // Right arrow (D = strafe right)
-        var dpadRight = mkMCBtn("dpad", "em-dpad-right");
-        dpadRight.appendChild(mkArrow("right"));
+        // Right arrow (D = strafe right) - uses sprite (66,56) 22x22 flipped horizontally
+        var dpadRight = mkDpadBtn("em-dpad-right");
         attachHoldButton(dpadRight,
             function () { pressKey(EM.keys.right); EM.moveDir.right = true; },
             function () { releaseKey(EM.keys.right); EM.moveDir.right = false; }
         );
         dpad.appendChild(dpadRight);
 
-        // Center button - sneak (Shift) - diamond icon
-        var dpadCenter = mkMCBtn("dpad", "em-dpad-center");
+        // Center button - sneak (Shift) - diamond icon (uses sprite)
+        var dpadCenter = mkDpadBtn("em-dpad-center");
         dpadCenter.appendChild(mkDiamond());
         attachHoldButton(dpadCenter,
             function () { pressKey(EM.keys.sneak); },
@@ -592,18 +588,29 @@
         return b;
     }
 
+    // D-pad button - uses sprite from touch_gui.png as full button background
+    // (matches 1.8.8's approach where the sprite includes both button bg + arrow icon)
+    function mkDpadBtn(cls) {
+        var b = document.createElement("button");
+        if (cls === "em-dpad-center") {
+            b.className = "em-dpad-center";
+        } else {
+            b.className = "em-dpad-sprite " + cls;
+        }
+        b.dataset.group = "dpad";
+        return b;
+    }
+
+    /* ---------- Icon builders - use ACTUAL 1.8.8 touch_gui.png sprites ---------- */
+
     function mkIcon(type) {
         var el = document.createElement("div");
-        el.className = "em-icon em-icon-" + type;
-        if (type === "pause") {
-            // Use CSS pseudo-elements for pause bars
-        } else if (type === "chat") {
-            // Use CSS pseudo-elements for chat bubble
-        }
+        el.className = "em-sprite em-sprite-" + type;
         return el;
     }
 
     function mkArrow(dir) {
+        // No longer used - D-pad buttons now use full sprite backgrounds via .em-dpad-sprite class
         var el = document.createElement("div");
         el.className = "em-arrow em-arrow-" + dir;
         return el;
@@ -611,43 +618,50 @@
 
     function mkDiamond() {
         var el = document.createElement("div");
-        el.className = "em-diamond";
+        el.className = "em-dpad-center-icon";
         return el;
     }
 
     function mkJumpIcon() {
         var el = document.createElement("div");
-        el.className = "em-icon-jump";
+        el.className = "em-sprite em-sprite-jump";
         return el;
     }
 
     function mkInventoryIcon() {
         var el = document.createElement("div");
-        el.className = "em-icon-inventory";
+        el.className = "em-sprite em-sprite-inventory";
         return el;
     }
 
     function mkDropIcon() {
-        var el = document.createElement("div");
-        el.className = "em-icon-drop";
+        // 1.8.8 renders this dynamically; use text label
+        var el = document.createElement("span");
+        el.className = "em-label-drop";
+        el.textContent = "DROP";
         return el;
     }
 
     function mkBreakIcon() {
-        var el = document.createElement("div");
-        el.className = "em-icon-break";
+        // 1.8.8 renders this dynamically; use text label
+        var el = document.createElement("span");
+        el.className = "em-label-break";
+        el.textContent = "BREAK";
         return el;
     }
 
     function mkPlaceIcon() {
-        var el = document.createElement("div");
-        el.className = "em-icon-place";
+        // 1.8.8 renders this dynamically; use text label
+        var el = document.createElement("span");
+        el.className = "em-label-place";
+        el.textContent = "PLACE";
         return el;
     }
 
     function mkFKeyLabel(text) {
+        // 1.8.8 renders F5/F3 using game's font; we use CSS text
         var el = document.createElement("span");
-        el.className = "em-f-key";
+        el.className = "em-text-" + text.toLowerCase();
         el.textContent = text;
         return el;
     }
