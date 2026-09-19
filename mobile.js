@@ -23,6 +23,7 @@
     var EM = {
         active: false,
         autoDetected: false,
+        isMobileDevice: false,   // explicit mobile-device flag
         capturedCanvas: null,
         capturedRoot: null,
         mouseMoveTarget: null,
@@ -34,6 +35,10 @@
         lookTouchId: null,
         moveDir: { up: false, down: false, left: false, right: false },
         activeSlot: 0,
+        // The element that the game called requestPointerLock() on.
+        // We track this so document.pointerLockElement returns the same
+        // reference the game is comparing against.
+        pointerLockedElement: null,
         // Browser key codes (which Eaglercraft reads via b.which)
         keys: {
             forward: 87, back: 83, left: 65, right: 68,
@@ -43,14 +48,39 @@
     };
     window.__eaglerMobile = EM;
 
-    /* ---------- Touch detection ---------- */
-    function isTouchDevice() {
-        return !!(
+    /* ---------- Mobile device detection (single source of truth) ----------
+     * Detects mobile devices using multiple signals:
+     *   1. Touch API support (ontouchstart, maxTouchPoints)
+     *   2. User-Agent hint (Mobi, Android, iPhone, iPad, etc.)
+     *   3. Coarse pointer media query (no fine pointer = touch-only)
+     *   4. Narrow viewport (typical phone width <= 820px)
+     * If ANY two of these match, we treat it as a mobile device.
+     */
+    function detectMobileDevice() {
+        var signals = 0;
+        // 1. Touch API
+        var hasTouchAPI = !!(
             ("ontouchstart" in window) ||
-            (navigator.maxTouchPoints > 0)
-        ) && /Mobi|Android|iPhone|iPad|iPod|Tablet|Touch/i.test(navigator.userAgent);
+            (navigator.maxTouchPoints > 0) ||
+            (window.DocumentTouch && document instanceof window.DocumentTouch)
+        );
+        if (hasTouchAPI) signals++;
+        // 2. User-Agent
+        var uaMatch = /Mobi|Android|iPhone|iPad|iPod|Tablet|Touch|Silk|Kindle|BlackBerry|Opera Mini|IEMobile/i.test(navigator.userAgent || "");
+        if (uaMatch) signals++;
+        // 3. Coarse pointer media query
+        try {
+            if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) signals++;
+        } catch (e) { /* ignore */ }
+        // 4. Narrow viewport (phone)
+        if (window.innerWidth <= 820 && window.innerHeight <= 1180) signals++;
+        // Also detect iPadOS 13+ which reports as Mac desktop
+        var isIpad = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+        if (isIpad) signals++;
+        return signals >= 2 || (hasTouchAPI && uaMatch);
     }
-    EM.autoDetected = isTouchDevice();
+    EM.isMobileDevice = detectMobileDevice();
+    EM.autoDetected = EM.isMobileDevice;
 
     /* ---------- Monkey-patch addEventListener to capture game handlers ---------- */
     var _origAddEventListener = EventTarget.prototype.addEventListener;
@@ -157,44 +187,140 @@
         });
     }
 
-    /* ---------- Pointer lock disable ---------- */
+    /* ---------- Pointer lock handling ----------
+     * The Eaglercraft 1.20.4 game's pointer-lock chain works like this:
+     *
+     *   1. Game calls `AQI(true)` -> calls `canvas.requestPointerLock()`
+     *   2. Browser fires `pointerlockchange` event
+     *   3. Game's `FJH` handler runs:
+     *        Glv = (document.pointerLockElement != null) ? 1 : 0
+     *   4. Game's main loop checks `Glv` to decide whether mouse
+     *      movement deltas should rotate the camera.
+     *   5. The mousemove handler `Fvj` ALSO checks `BLe()`:
+     *        BLe() = navigator.userActivation.hasBeenActive
+     *      If that's false, camera rotation is ignored entirely.
+     *
+     * On mobile, both pieces break:
+     *   - requestPointerLock() is a no-op (mobile browsers reject it)
+     *   - navigator.userActivation.hasBeenActive returns false until
+     *     the user has clicked/tapped something the browser considers
+     *     an activation gesture
+     *
+     * Our fix:
+     *   1. When the game calls `canvas.requestPointerLock()`, we remember
+     *      WHICH canvas was passed, then dispatch `pointerlockchange`
+     *      asynchronously (so the game's requestPointerLock returns first,
+     *      matching real browser behavior).
+     *   2. `document.pointerLockElement` returns that exact canvas, so the
+     *      game's `pointerLockElement === canvas` check succeeds.
+     *   3. We stub `navigator.userActivation` so `hasBeenActive` is always
+     *      true while mobile mode is active.
+     */
+    var _origRequestPointerLock = HTMLElement.prototype.requestPointerLock;
+    var _origExitPointerLock = document.exitPointerLock ? document.exitPointerLock.bind(document) : function () {};
+    var _origUserActivation = navigator.userActivation ? Object.getOwnPropertyDescriptor(navigator, "userActivation") || Object.getOwnPropertyDescriptor(Navigator.prototype, "userActivation") : null;
+
     function disablePointerLock() {
         if (document._emPLDisabled) return;
         document._emPLDisabled = true;
+
+        // 1. Stub requestPointerLock to remember which element was locked
         HTMLElement.prototype.requestPointerLock = function () {
-            try {
-                var ev = new Event("pointerlockchange");
-                document.dispatchEvent(ev);
-            } catch (e) { /* ignore */ }
+            // Remember the exact element that called requestPointerLock
+            EM.pointerLockedElement = this;
+            // Dispatch pointerlockchange ASYNCHRONOUSLY.
+            // Real browsers fire it after requestPointerLock returns,
+            // so we use setTimeout(0) to mimic that ordering.
+            var self = this;
+            setTimeout(function () {
+                try {
+                    var ev = new Event("pointerlockchange");
+                    document.dispatchEvent(ev);
+                    // Some browsers also fire it on the element itself
+                    try { self.dispatchEvent(new Event("pointerlockchange", { bubbles: true })); } catch (e) { /* ignore */ }
+                } catch (e) { /* ignore */ }
+            }, 0);
+            // Return undefined (real requestPointerLock returns undefined)
+            return undefined;
         };
+
+        // 2. Stub exitPointerLock to clear the locked element
         document.exitPointerLock = function () {
-            try {
-                var ev = new Event("pointerlockchange");
-                document.dispatchEvent(ev);
-            } catch (e) { /* ignore */ }
+            var wasLocked = EM.pointerLockedElement;
+            EM.pointerLockedElement = null;
+            setTimeout(function () {
+                try {
+                    var ev = new Event("pointerlockchange");
+                    document.dispatchEvent(ev);
+                } catch (e) { /* ignore */ }
+            }, 0);
+            return undefined;
         };
+
+        // 3. Make document.pointerLockElement return the element the game locked
         try {
             Object.defineProperty(document, "pointerLockElement", {
                 get: function () {
-                    return window.__eaglerMobile && window.__eaglerMobile.active
-                        ? (window.__eaglerMobile.capturedCanvas || null)
-                        : null;
+                    // Only fake a locked element while mobile mode is active
+                    if (window.__eaglerMobile && window.__eaglerMobile.active) {
+                        return EM.pointerLockedElement || null;
+                    }
+                    return null;
                 },
                 configurable: true
             });
+        } catch (e) { /* ignore — some browsers don't allow redefining, but most do */ }
+
+        // 4. Stub navigator.userActivation so BLe() returns true
+        //    This is what the mousemove handler Fvj checks.
+        try {
+            var fakeUserActivation = {
+                hasBeenActive: true,
+                isActive: true,
+                wasRecentlyActive: true
+            };
+            // Try to define on navigator (works in most browsers)
+            try {
+                Object.defineProperty(navigator, "userActivation", {
+                    get: function () { return fakeUserActivation; },
+                    configurable: true
+                });
+            } catch (e) {
+                // If direct define fails, try on Navigator.prototype
+                try {
+                    Object.defineProperty(Navigator.prototype, "userActivation", {
+                        get: function () { return fakeUserActivation; },
+                        configurable: true
+                    });
+                } catch (e2) { /* ignore */ }
+            }
         } catch (e) { /* ignore */ }
+
+        console.log("[Eaglercraft Mobile] Pointer lock stubbed for mobile mode");
     }
+
     function enablePointerLock() {
         if (!document._emPLDisabled) return;
         document._emPLDisabled = false;
-        HTMLElement.prototype.requestPointerLock = function () { /* no-op */ };
-        document.exitPointerLock = function () { /* no-op */ };
+
+        // Restore requestPointerLock
+        HTMLElement.prototype.requestPointerLock = _origRequestPointerLock;
+        document.exitPointerLock = _origExitPointerLock;
+
+        // Restore pointerLockElement to default (returns null normally)
         try {
             Object.defineProperty(document, "pointerLockElement", {
                 get: function () { return null; },
                 configurable: true
             });
         } catch (e) { /* ignore */ }
+
+        // Restore userActivation (delete our fake so the native getter works)
+        try { delete navigator.userActivation; } catch (e) { /* ignore */ }
+        try { delete Navigator.prototype.userActivation; } catch (e) { /* ignore */ }
+
+        EM.pointerLockedElement = null;
+        console.log("[Eaglercraft Mobile] Pointer lock restored to native behavior");
     }
 
     /* =====================================================================
@@ -663,14 +789,44 @@
         if (root) root.classList.toggle("em-active", EM.active);
 
         if (EM.active) {
+            // Disable pointer lock FIRST (so the game's requestPointerLock calls get stubbed)
             disablePointerLock();
+            // Then find the game canvas
             if (!EM.capturedCanvas) {
                 EM.capturedCanvas = findGameCanvas();
                 EM.mouseMoveTarget = EM.capturedCanvas || EM.mouseMoveTarget;
                 EM.mouseButtonTarget = EM.capturedCanvas || EM.mouseButtonTarget;
             }
             showStatus("Mobile controls ON");
+
+            // Pre-emptively set the pointer lock state so the game's `Glv` flag
+            // gets set to 1 once the canvas exists. We poll for the canvas because
+            // it might not exist yet (the 13 MB classes.js is still loading).
+            function lockCanvasWhenReady() {
+                if (!EM.capturedCanvas) {
+                    EM.capturedCanvas = findGameCanvas();
+                    if (EM.capturedCanvas) {
+                        EM.mouseMoveTarget = EM.capturedCanvas;
+                        EM.mouseButtonTarget = EM.capturedCanvas;
+                    }
+                }
+                if (EM.capturedCanvas && !EM.pointerLockedElement) {
+                    // Simulate the game calling requestPointerLock on the canvas
+                    // (this sets pointerLockedElement and dispatches pointerlockchange)
+                    try { EM.capturedCanvas.requestPointerLock(); } catch (e) { /* ignore */ }
+                    console.log("[Eaglercraft Mobile] Auto-locked pointer to canvas");
+                }
+                if (!EM.pointerLockedElement) {
+                    // Try again in 500ms (canvas might still be loading)
+                    setTimeout(lockCanvasWhenReady, 500);
+                }
+            }
+            setTimeout(lockCanvasWhenReady, 100);
         } else {
+            // Release any pointer lock we faked
+            if (EM.pointerLockedElement) {
+                try { document.exitPointerLock(); } catch (e) { /* ignore */ }
+            }
             enablePointerLock();
             showStatus("Mobile controls OFF");
             for (var k in EM.keys) {
