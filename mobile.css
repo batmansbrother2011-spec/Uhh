@@ -1,10 +1,14 @@
 /* =====================================================================
- * Eaglercraft 1.20.4 - Mobile Touch Controls (v4)
- * DIRECT PORT of Eaglercraft 1.8.8 mobile UI
- * - Uses actual touch_gui.png sprites (extracted from 1.8.8 assets)
- * - Layout matches 1.8.8 reference image exactly
- * - Look control is a stone-textured BUTTON (not transparent drag zone)
- *   matching 1.8.8's "grid icon" look button
+ * Eaglercraft 1.20.4 - Mobile Touch Controls (v5)
+ * Layout EXACTLY matches Eaglercraft 1.8.8 reference image:
+ *   - D-pad: bottom-left (cross of 5 buttons)
+ *   - Jump: directly ABOVE D-pad Up button
+ *   - Sneak: to the LEFT of D-pad Down button
+ *   - Look button: bottom-right, just above hotbar (with grid icon)
+ *   - Inventory: next to Look button
+ *   - Top bar: Pause | Chat | F5 | F3
+ *   - Hotbar: bottom-center
+ * Uses ACTUAL touch_gui.png sprites extracted from 1.8.8
  * ===================================================================== */
 
 #eagler-mobile-root {
@@ -28,7 +32,6 @@
 
 /* =====================================================================
  * Sprite sheet - touch_gui.png (extracted from Eaglercraft 1.8.8)
- * 256x256 texture, sprites at known coordinates
  * ===================================================================== */
 .em-sprite {
     background-image: url("mobile_assets/touch_gui.png");
@@ -39,8 +42,7 @@
 }
 
 /* =====================================================================
- * Stone button base - same texture as Minecraft GUI buttons
- * Used for: top bar (Pause/Chat/F5/F3), action buttons (Jump/Inventory/Drop/Break/Place)
+ * Stone button base (Minecraft GUI style)
  * ===================================================================== */
 .em-mc-btn {
     position: absolute;
@@ -85,16 +87,9 @@
 }
 
 /* =====================================================================
- * D-pad buttons - use ACTUAL 1.8.8 touch_gui.png sprites as full button bg
- * Sprites include both the stone button texture AND the arrow icon
- *
- * SPRITE SCALING MATH:
- *   touch_gui.png is 256x256
- *   Each sprite is 22x22 (at original scale)
- *   We want button to be 50x50 (or 42x42 on mobile)
- *   Scale factor = 50/22 = 2.273 (or 42/22 = 1.909 for mobile)
- *   So background-size should be 256 * (50/22) = 581.8px (or 256 * (42/22) = 488.7px)
- *   Then background-position offsets are also multiplied by the scale factor
+ * D-pad buttons - use 1.8.8 touch_gui.png sprites (button bg + arrow)
+ * Sprite scaling: 50px button / 22px sprite = 2.273 scale
+ * background-size = 256 * 2.273 = 581.8px
  * ===================================================================== */
 .em-dpad-btn {
     position: absolute;
@@ -111,8 +106,6 @@
     border: none;
     padding: 0;
     margin: 0;
-    /* Default: 50x50 button, sprite is 22x22 -> scale = 50/22 = 2.273 */
-    /* Texture is 256x256, so background-size = 256 * 2.273 = 581.8px */
     background-size: 581.8px 581.8px;
     width: 50px;
     height: 50px;
@@ -121,31 +114,16 @@
     filter: brightness(0.7);
 }
 
-/* D-pad Up    - sprite at (44,56) 22x22 - up arrow */
-.em-dpad-up {
-    /* position = sprite_x * scale = 44 * 2.273 = 100px */
-    background-position: -100px -127.3px;
-}
+/* D-pad Up    - sprite at (44,56) */
+.em-dpad-up    { background-position: -100px -127.3px; }
+/* D-pad Down  - sprite at (0,56) flipped vertically */
+.em-dpad-down  { background-position: -0px -127.3px; transform: scaleY(-1); }
+/* D-pad Left  - sprite at (0,56) */
+.em-dpad-left  { background-position: -0px -127.3px; }
+/* D-pad Right - sprite at (66,56) flipped horizontally */
+.em-dpad-right { background-position: -150px -127.3px; transform: scaleX(-1); }
 
-/* D-pad Down  - sprite at (0,56) 22x22 flipped vertically */
-.em-dpad-down {
-    background-position: -0px -127.3px;
-    transform: scaleY(-1);
-}
-
-/* D-pad Left  - sprite at (0,56) 22x22 - left arrow */
-.em-dpad-left {
-    background-position: -0px -127.3px;
-}
-
-/* D-pad Right - sprite at (66,56) 22x22 flipped horizontally */
-.em-dpad-right {
-    /* position = 66 * 2.273 = 150px */
-    background-position: -150px -127.3px;
-    transform: scaleX(-1);
-}
-
-/* D-pad center - sneak button (diamond icon) */
+/* D-pad center - stone button with diamond icon */
 .em-dpad-center {
     position: absolute;
     width: 50px;
@@ -170,7 +148,7 @@
     border-color: #373737 #f0f0f0 #f0f0f0 #373737;
 }
 
-/* Diamond icon - sprite at (20,36) 20x20 - the jump/sneak diamond */
+/* Diamond icon - sprite at (20,36) 20x20 */
 .em-diamond-icon {
     width: 20px;
     height: 20px;
@@ -185,7 +163,7 @@
 }
 
 /* =====================================================================
- * Toggle button (top-right corner) - small Minecraft-style button
+ * Toggle button (top-right corner)
  * ===================================================================== */
 #em-toggle-btn {
     position: fixed;
@@ -225,7 +203,7 @@
 #em-toggle-btn .em-hamburger > span { top: 7px; }
 
 /* =====================================================================
- * TOP BAR - Pause | Chat | F5 | F3 (matches 1.8.8 reference exactly)
+ * TOP BAR - Pause | Chat | F5 | F3
  * ===================================================================== */
 .em-topbar {
     position: fixed;
@@ -246,23 +224,19 @@
     justify-content: center;
 }
 
-/* Pause icon - sprite at (0,0) 18x18 - two vertical bars */
+/* Pause icon - sprite at (0,0) 18x18 */
 .em-sprite-pause {
-    width: 18px;
-    height: 18px;
+    width: 18px; height: 18px;
     background-position: -0px -0px;
     transform: scale(1.5);
 }
-
-/* Chat icon - sprite at (0,18) 18x18 - speech bubble with dots */
+/* Chat icon - sprite at (0,18) 18x18 */
 .em-sprite-chat {
-    width: 18px;
-    height: 18px;
+    width: 18px; height: 18px;
     background-position: -0px -18px;
     transform: scale(1.5);
 }
-
-/* F-key text - rendered as CSS text (1.8.8 uses game font for these) */
+/* F-key text */
 .em-text-f5, .em-text-f3 {
     font-family: monospace;
     font-size: 11px;
@@ -274,15 +248,28 @@
 }
 
 /* =====================================================================
- * D-PAD container (bottom-left)
+ * LEFT CLUSTER - D-pad + Jump (above) + Sneak (left of Down)
+ * Layout matches 1.8.8 reference:
+ *              [JUMP]
+ *         [SNK] [UP]
+ *         [LFT][CTR][RGT]
+ *              [DN]
  * ===================================================================== */
-.em-dpad {
+.em-left-cluster {
     position: fixed;
     left: calc(env(safe-area-inset-left, 0px) + 20px);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+    width: 156px;
+    height: 220px;
+    pointer-events: auto;
+}
+/* D-pad container (within left cluster, at bottom) */
+.em-dpad {
+    position: absolute;
+    left: 0;
+    bottom: 0;
     width: 156px;
     height: 156px;
-    pointer-events: auto;
 }
 .em-dpad .em-dpad-btn, .em-dpad .em-dpad-center {
     position: absolute;
@@ -291,48 +278,76 @@
 .em-dpad-down  { left: 53px; top: 106px; }
 .em-dpad-left  { left: 0;   top: 53px; }
 .em-dpad-right { left: 106px; top: 53px; }
-.em-dpad-center-pos { left: 53px; top: 53px; }
+.em-dpad-center { left: 53px; top: 53px; }
+
+/* Jump button - directly ABOVE D-pad Up */
+.em-jump-btn {
+    position: absolute;
+    left: 53px;
+    top: 0;
+    width: 50px;
+    height: 50px;
+}
+/* Sneak button - to the LEFT of D-pad Down */
+.em-sneak-btn {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 50px;
+    height: 50px;
+}
+
+/* Jump icon - sprite at (20,36) 20x20 (diamond) */
+.em-sprite-jump {
+    width: 20px; height: 20px;
+    background-position: -20px -36px;
+    transform: scale(1.4);
+}
 
 /* =====================================================================
- * LOOK BUTTON (right side) - stone-textured button with grid icon
- * This is a PROPER touch control like Minecraft Bedrock, NOT a virtual mousepad
- * The button shows a grid/window-pane icon (sprite at 36,18)
- * Drag inside the button to look around
+ * RIGHT CLUSTER - Look button + Inventory (next to it)
+ * Layout matches 1.8.8 reference:
+ *         [INV]
+ *         [LOOK]
+ * (Inventory above Look, both in bottom-right above hotbar)
  * ===================================================================== */
-.em-lookzone {
+.em-right-cluster {
     position: fixed;
     right: calc(env(safe-area-inset-right, 0px) + 20px);
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
+    width: 108px;
+    height: 108px;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+/* Look button - stone-textured with grid icon, drag to look */
+.em-lookzone {
     width: 100px;
     height: 100px;
     pointer-events: auto;
     touch-action: none;
     background-color: #8b8b8b;
-    background-image:
-        linear-gradient(to bottom,
-            #c6c6c6 0%,
-            #a8a8a8 30%,
-            #8b8b8b 60%,
-            #6e6e6e 100%);
+    background-image: linear-gradient(to bottom, #c6c6c6, #a8a8a8 30%, #8b8b8b 60%, #6e6e6e 100%);
     border: 2px solid;
     border-color: #f0f0f0 #373737 #373737 #f0f0f0;
-    box-shadow:
-        inset 2px 2px 0 rgba(255, 255, 255, 0.25),
-        inset -2px -2px 0 rgba(0, 0, 0, 0.35);
+    box-shadow: inset 2px 2px 0 rgba(255,255,255,0.25), inset -2px -2px 0 rgba(0,0,0,0.35);
     cursor: pointer;
     image-rendering: pixelated;
     -webkit-image-rendering: pixelated;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 50;
+    position: relative;
 }
 .em-lookzone.em-pressed {
     filter: brightness(0.85);
     border-color: #373737 #f0f0f0 #f0f0f0 #373737;
 }
-/* Grid icon - sprite at (36,18) 18x18 (the inventory grid icon used as "look" indicator) */
+/* Grid icon - sprite at (36,18) 18x18 */
 .em-lookzone-icon {
     width: 18px;
     height: 18px;
@@ -347,54 +362,29 @@
     opacity: 0.5;
 }
 
-/* =====================================================================
- * Action buttons (bottom-right) - Jump + Inventory + secondary actions
- * ===================================================================== */
-.em-actions {
-    position: fixed;
-    right: calc(env(safe-area-inset-right, 0px) + 20px);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 100px);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-end;
-    pointer-events: none;
+/* Inventory button - smaller, above Look button */
+.em-inv-btn {
+    width: 50px;
+    height: 50px;
 }
-.em-actions-row {
-    display: flex;
-    gap: 8px;
-}
-.em-actions .em-mc-btn {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    pointer-events: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Jump icon - sprite at (20,36) 20x20 - diamond shape */
-.em-sprite-jump {
-    width: 20px;
-    height: 20px;
-    background-position: -20px -36px;
-    transform: scale(1.4);
-}
-
-/* Inventory icon - sprite at (36,18) 18x18 - 3x3 grid */
+/* Inventory icon - sprite at (36,18) 18x18 */
 .em-sprite-inventory {
-    width: 18px;
-    height: 18px;
+    width: 18px; height: 18px;
     background-position: -36px -18px;
     transform: scale(1.5);
 }
 
-/* Secondary actions - smaller buttons */
+/* =====================================================================
+ * Secondary actions (Break/Place/Drop) - small buttons
+ * Positioned between the two clusters, above hotbar
+ * ===================================================================== */
 .em-secondary-actions {
+    position: fixed;
+    right: calc(env(safe-area-inset-right, 0px) + 130px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
     display: flex;
+    flex-direction: column;
     gap: 6px;
-    margin-top: 4px;
     pointer-events: none;
 }
 .em-secondary-actions .em-mc-btn {
@@ -406,7 +396,6 @@
     justify-content: center;
 }
 
-/* Break/Place/Drop text labels (1.8.8 renders these dynamically via game font) */
 .em-label-break, .em-label-place, .em-label-drop {
     font-family: monospace;
     font-size: 9px;
@@ -419,7 +408,7 @@
 }
 
 /* =====================================================================
- * HOTBAR (bottom-center) - 9 slots, Minecraft style
+ * HOTBAR (bottom-center) - 9 slots
  * ===================================================================== */
 .em-hotbar {
     position: fixed;
@@ -449,13 +438,12 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: none;
     box-sizing: border-box;
     position: relative;
     image-rendering: pixelated;
 }
 .em-slot.em-active {
-    border-color: #fff #fff #fff #fff;
+    border-color: #fff;
     border-width: 3px;
     background-image: linear-gradient(to bottom, #4a5a3a 0%, #2a3a1a 100%);
     z-index: 2;
@@ -506,81 +494,90 @@
  * Responsive: small screens
  * ===================================================================== */
 @media (max-width: 480px) {
+    .em-left-cluster {
+        left: calc(env(safe-area-inset-left, 0px) + 12px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
+        width: 132px;
+        height: 186px;
+    }
     .em-dpad {
         width: 132px;
         height: 132px;
-        left: calc(env(safe-area-inset-left, 0px) + 12px);
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
     }
-    .em-dpad .em-dpad-btn, .em-dpad .em-dpad-center {
+    .em-dpad .em-dpad-btn, .em-dpad .em-dpad-center, .em-jump-btn, .em-sneak-btn {
         width: 42px;
         height: 42px;
     }
-    /* On mobile: 42x42 button, sprite is 22x22 -> scale = 42/22 = 1.909 */
-    /* background-size = 256 * 1.909 = 488.7px */
+    /* Mobile: 42x42 button, scale = 42/22 = 1.909, bg-size = 488.7px */
     .em-dpad-btn {
         background-size: 488.7px 488.7px;
     }
-    /* position offsets: 44 * 1.909 = 84, 56 * 1.909 = 106.9, 66 * 1.909 = 126 */
-    .em-dpad-up    { background-position: -84px -106.9px; }
-    .em-dpad-down  { background-position: -0px -106.9px; }
-    .em-dpad-left  { background-position: -0px -106.9px; }
-    .em-dpad-right { background-position: -126px -106.9px; }
+    .em-dpad-up    { background-position: -84px -106.9px; left: 45px; top: 0; }
+    .em-dpad-down  { background-position: -0px -106.9px; left: 45px; top: 90px; }
+    .em-dpad-left  { background-position: -0px -106.9px; left: 0; top: 45px; }
+    .em-dpad-right { background-position: -126px -106.9px; left: 90px; top: 45px; }
+    .em-dpad-center { left: 45px; top: 45px; }
+    .em-jump-btn { left: 45px; top: 0; }
+    .em-sneak-btn { left: 0; bottom: 0; }
 
-    .em-dpad-up    { left: 45px; top: 0; }
-    .em-dpad-down  { left: 45px; top: 90px; }
-    .em-dpad-left  { left: 0;   top: 45px; }
-    .em-dpad-right { left: 90px; top: 45px; }
-    .em-dpad-center-pos { left: 45px; top: 45px; }
-
-    .em-lookzone {
-        width: 80px;
-        height: 80px;
+    .em-right-cluster {
         right: calc(env(safe-area-inset-right, 0px) + 12px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
+        width: 86px;
+        height: 86px;
     }
+    .em-lookzone { width: 80px; height: 80px; }
+    .em-inv-btn { width: 42px; height: 42px; }
 
-    .em-actions .em-mc-btn { width: 52px; height: 52px; }
-    .em-actions {
-        right: calc(env(safe-area-inset-right, 0px) + 12px);
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
+    .em-secondary-actions {
+        right: calc(env(safe-area-inset-right, 0px) + 105px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 70px);
     }
+    .em-secondary-actions .em-mc-btn { width: 40px; height: 40px; }
+
     .em-slot { width: 32px; height: 32px; font-size: 10px; }
     .em-topbar .em-mc-btn { width: 40px; height: 40px; }
 }
 
 @media (orientation: landscape) and (max-height: 480px) {
+    .em-left-cluster {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 50px);
+        width: 120px;
+        height: 168px;
+    }
     .em-dpad {
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
         width: 120px;
         height: 120px;
     }
-    .em-dpad .em-dpad-btn, .em-dpad .em-dpad-center {
+    .em-dpad .em-dpad-btn, .em-dpad .em-dpad-center, .em-jump-btn, .em-sneak-btn {
         width: 38px;
         height: 38px;
     }
-    /* On landscape: 38x38 button, sprite is 22x22 -> scale = 38/22 = 1.727 */
-    /* background-size = 256 * 1.727 = 442.2px */
+    /* Landscape: 38x38 button, scale = 38/22 = 1.727, bg-size = 442.2px */
     .em-dpad-btn {
         background-size: 442.2px 442.2px;
     }
-    .em-dpad-up    { background-position: -76px -96.7px; }
-    .em-dpad-down  { background-position: -0px -96.7px; }
-    .em-dpad-left  { background-position: -0px -96.7px; }
-    .em-dpad-right { background-position: -114px -96.7px; }
+    .em-dpad-up    { background-position: -76px -96.7px; left: 41px; top: 0; }
+    .em-dpad-down  { background-position: -0px -96.7px; left: 41px; top: 82px; }
+    .em-dpad-left  { background-position: -0px -96.7px; left: 0; top: 41px; }
+    .em-dpad-right { background-position: -114px -96.7px; left: 82px; top: 41px; }
+    .em-dpad-center { left: 41px; top: 41px; }
+    .em-jump-btn { left: 41px; top: 0; }
+    .em-sneak-btn { left: 0; bottom: 0; }
 
-    .em-dpad-up    { left: 41px; top: 0; }
-    .em-dpad-down  { left: 41px; top: 82px; }
-    .em-dpad-left  { left: 0;   top: 41px; }
-    .em-dpad-right { left: 82px; top: 41px; }
-    .em-dpad-center-pos { left: 41px; top: 41px; }
-
-    .em-lookzone {
-        width: 70px;
-        height: 70px;
+    .em-right-cluster {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 50px);
+        width: 78px;
+        height: 78px;
     }
+    .em-lookzone { width: 70px; height: 70px; }
+    .em-inv-btn { width: 38px; height: 38px; }
 
-    .em-actions .em-mc-btn { width: 48px; height: 48px; }
-    .em-actions { bottom: calc(env(safe-area-inset-bottom, 0px) + 60px); }
+    .em-secondary-actions {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 60px);
+    }
+    .em-secondary-actions .em-mc-btn { width: 36px; height: 36px; }
+
     .em-slot { width: 32px; height: 32px; }
     .em-hotbar { bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
     .em-topbar .em-mc-btn { width: 36px; height: 36px; }

@@ -389,11 +389,39 @@
 
         root.appendChild(topbar);
 
-        /* ---- D-Pad (bottom-left) ---- */
-        var dpad = document.createElement("div");
-        dpad.className = "em-dpad em-interactive";
+        /* ---- LEFT CLUSTER: Jump (top) + D-pad (bottom) + Sneak (left of Down) ----
+         * Matches 1.8.8 reference layout exactly:
+         *              [JUMP]
+         *         [SNK] [UP]
+         *         [LFT][CTR][RGT]
+         *              [DN]
+         */
+        var leftCluster = document.createElement("div");
+        leftCluster.className = "em-left-cluster em-interactive";
 
-        // Up arrow (W = forward) - uses sprite (44,56) 22x22 from touch_gui.png
+        // Jump button (Space) - ABOVE D-pad Up
+        var jumpBtn = mkMCBtn("actions", "em-jump-btn");
+        jumpBtn.appendChild(mkJumpIcon());
+        attachHoldButton(jumpBtn,
+            function () { pressKey(EM.keys.jump); },
+            function () { releaseKey(EM.keys.jump); }
+        );
+        leftCluster.appendChild(jumpBtn);
+
+        // Sneak button (Shift) - LEFT of D-pad Down
+        var sneakBtn = mkMCBtn("actions", "em-sneak-btn");
+        sneakBtn.appendChild(mkDiamond());
+        attachHoldButton(sneakBtn,
+            function () { pressKey(EM.keys.sneak); },
+            function () { releaseKey(EM.keys.sneak); }
+        );
+        leftCluster.appendChild(sneakBtn);
+
+        // D-pad container
+        var dpad = document.createElement("div");
+        dpad.className = "em-dpad";
+
+        // Up arrow (W = forward)
         var dpadUp = mkDpadBtn("em-dpad-up");
         attachHoldButton(dpadUp,
             function () { pressKey(EM.keys.forward); EM.moveDir.up = true; },
@@ -401,7 +429,7 @@
         );
         dpad.appendChild(dpadUp);
 
-        // Down arrow (S = back) - uses sprite (0,56) 22x22 flipped vertically
+        // Down arrow (S = back)
         var dpadDown = mkDpadBtn("em-dpad-down");
         attachHoldButton(dpadDown,
             function () { pressKey(EM.keys.back); EM.moveDir.down = true; },
@@ -409,7 +437,7 @@
         );
         dpad.appendChild(dpadDown);
 
-        // Left arrow (A = strafe left) - uses sprite (0,56) 22x22
+        // Left arrow (A = strafe left)
         var dpadLeft = mkDpadBtn("em-dpad-left");
         attachHoldButton(dpadLeft,
             function () { pressKey(EM.keys.left); EM.moveDir.left = true; },
@@ -417,7 +445,7 @@
         );
         dpad.appendChild(dpadLeft);
 
-        // Right arrow (D = strafe right) - uses sprite (66,56) 22x22 flipped horizontally
+        // Right arrow (D = strafe right)
         var dpadRight = mkDpadBtn("em-dpad-right");
         attachHoldButton(dpadRight,
             function () { pressKey(EM.keys.right); EM.moveDir.right = true; },
@@ -425,61 +453,47 @@
         );
         dpad.appendChild(dpadRight);
 
-        // Center button - sneak (Shift) - diamond icon (uses sprite)
+        // Center button - sneak/jump indicator (visual only, no action)
         var dpadCenter = mkDpadBtn("em-dpad-center");
-        dpadCenter.classList.add("em-dpad-center-pos");
         dpadCenter.appendChild(mkDiamond());
-        attachHoldButton(dpadCenter,
-            function () { pressKey(EM.keys.sneak); },
-            function () { releaseKey(EM.keys.sneak); }
-        );
+        // No action - it's just visual (the 1.8.8 reference shows a diamond here
+        // but it doesn't do anything - sneak is the separate button to the left)
         dpad.appendChild(dpadCenter);
 
-        root.appendChild(dpad);
+        leftCluster.appendChild(dpad);
+        root.appendChild(leftCluster);
 
-        /* ---- LOOK BUTTON (right side, stone-textured, with grid icon) ----
-         * This is a PROPER touch control like Minecraft Bedrock, not a virtual mousepad.
-         * It's a stone button with a grid icon (matching the 1.8.8 reference image).
-         * Drag inside the button to look around.
+        /* ---- RIGHT CLUSTER: Inventory (top) + Look button (bottom) ----
+         * Matches 1.8.8 reference layout exactly:
+         *   [INV]
+         *   [LOOK]
          */
-        var look = document.createElement("div");
-        look.className = "em-lookzone em-interactive";
-        var lookIcon = document.createElement("div");
-        lookIcon.className = "em-lookzone-icon";
-        look.appendChild(lookIcon);
-        attachLookZone(look);
-        root.appendChild(look);
+        var rightCluster = document.createElement("div");
+        rightCluster.className = "em-right-cluster em-interactive";
 
-        /* ---- Action buttons (bottom-right) - Jump + Inventory ---- */
-        var actions = document.createElement("div");
-        actions.className = "em-actions em-interactive";
-
-        var actionsRow = document.createElement("div");
-        actionsRow.className = "em-actions-row";
-
-        // Jump button (Space) - diamond icon
-        var jumpBtn = mkMCBtn("actions", "em-jump");
-        jumpBtn.appendChild(mkJumpIcon());
-        attachHoldButton(jumpBtn,
-            function () { pressKey(EM.keys.jump); },
-            function () { releaseKey(EM.keys.jump); }
-        );
-        actionsRow.appendChild(jumpBtn);
-
-        // Inventory button (E) - 3x3 grid icon
-        var invBtn = mkMCBtn("actions", "em-inv");
+        // Inventory button (E) - above Look button
+        var invBtn = mkMCBtn("actions", "em-inv-btn");
         invBtn.appendChild(mkInventoryIcon());
         attachTapButton(invBtn, function () {
             pressKey(EM.keys.inventory);
             setTimeout(function () { releaseKey(EM.keys.inventory); }, 60);
         });
-        actionsRow.appendChild(invBtn);
+        rightCluster.appendChild(invBtn);
 
-        actions.appendChild(actionsRow);
+        // Look button - stone-textured with grid icon, drag to look
+        var look = document.createElement("div");
+        look.className = "em-lookzone";
+        var lookIcon = document.createElement("div");
+        lookIcon.className = "em-lookzone-icon";
+        look.appendChild(lookIcon);
+        attachLookZone(look);
+        rightCluster.appendChild(look);
 
-        // Secondary actions: Drop, Break, Place (smaller buttons)
+        root.appendChild(rightCluster);
+
+        /* ---- SECONDARY ACTIONS: Drop, Break, Place (between clusters) ---- */
         var secondary = document.createElement("div");
-        secondary.className = "em-secondary-actions";
+        secondary.className = "em-secondary-actions em-interactive";
 
         // Drop button (Q)
         var dropBtn = mkMCBtn("secondary", "em-drop");
@@ -518,8 +532,7 @@
         });
         secondary.appendChild(placeBtn);
 
-        actions.appendChild(secondary);
-        root.appendChild(actions);
+        root.appendChild(secondary);
 
         /* ---- Hotbar (bottom-center) - 9 slots ---- */
         var hotbar = document.createElement("div");
