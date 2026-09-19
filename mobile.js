@@ -427,6 +427,7 @@
 
         // Center button - sneak (Shift) - diamond icon (uses sprite)
         var dpadCenter = mkDpadBtn("em-dpad-center");
+        dpadCenter.classList.add("em-dpad-center-pos");
         dpadCenter.appendChild(mkDiamond());
         attachHoldButton(dpadCenter,
             function () { pressKey(EM.keys.sneak); },
@@ -436,13 +437,16 @@
 
         root.appendChild(dpad);
 
-        /* ---- Look zone (right half) ---- */
+        /* ---- LOOK BUTTON (right side, stone-textured, with grid icon) ----
+         * This is a PROPER touch control like Minecraft Bedrock, not a virtual mousepad.
+         * It's a stone button with a grid icon (matching the 1.8.8 reference image).
+         * Drag inside the button to look around.
+         */
         var look = document.createElement("div");
-        look.className = "em-lookzone em-interactive em-hint";
-        var lookHint = document.createElement("div");
-        lookHint.className = "em-lookzone-hint";
-        lookHint.textContent = "Drag to look\nTap = place  |  Hold = break";
-        look.appendChild(lookHint);
+        look.className = "em-lookzone em-interactive";
+        var lookIcon = document.createElement("div");
+        lookIcon.className = "em-lookzone-icon";
+        look.appendChild(lookIcon);
         attachLookZone(look);
         root.appendChild(look);
 
@@ -593,9 +597,11 @@
     function mkDpadBtn(cls) {
         var b = document.createElement("button");
         if (cls === "em-dpad-center") {
+            // Center button uses CSS-styled stone button (no sprite bg)
             b.className = "em-dpad-center";
         } else {
-            b.className = "em-dpad-sprite " + cls;
+            // Directional buttons use sprite as full background
+            b.className = "em-dpad-btn " + cls;
         }
         b.dataset.group = "dpad";
         return b;
@@ -712,7 +718,8 @@
 
     /* ---------- Look zone (drag-to-look) ---------- */
     function attachLookZone(el) {
-        var LOOK_SENSITIVITY = 0.7;
+        // Higher sensitivity since the look button is smaller now (100x100)
+        var LOOK_SENSITIVITY = 1.2;
 
         function onTouchStart(e) {
             if (EM.lookTouchId !== null) return;
@@ -721,9 +728,7 @@
             EM.lookLastX = t.clientX;
             EM.lookLastY = t.clientY;
             EM.lookActive = true;
-            el.classList.remove("em-hint");
-            var hint = el.querySelector(".em-lookzone-hint");
-            if (hint) hint.style.display = "none";
+            el.classList.add("em-pressed");
             e.preventDefault();
         }
         function onTouchMove(e) {
@@ -748,6 +753,7 @@
                 if (e.changedTouches[i].identifier === EM.lookTouchId) {
                     EM.lookTouchId = null;
                     EM.lookActive = false;
+                    el.classList.remove("em-pressed");
                     break;
                 }
             }
@@ -765,9 +771,7 @@
             EM.lookLastX = e.clientX;
             EM.lookLastY = e.clientY;
             EM.lookActive = true;
-            el.classList.remove("em-hint");
-            var hint = el.querySelector(".em-lookzone-hint");
-            if (hint) hint.style.display = "none";
+            el.classList.add("em-pressed");
             e.preventDefault();
         });
         el.addEventListener("mousemove", function (e) {
@@ -779,7 +783,11 @@
             if (dx !== 0 || dy !== 0) mouseMove(dx, dy);
         });
         window.addEventListener("mouseup", function () {
-            if (mouseDown) { mouseDown = false; EM.lookActive = false; }
+            if (mouseDown) {
+                mouseDown = false;
+                EM.lookActive = false;
+                el.classList.remove("em-pressed");
+            }
         });
     }
 
